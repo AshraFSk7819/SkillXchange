@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkillXchange - Connect & Learn</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        brand: '#6366f1', /* Indigo 500 - Modern & Clean */
+                        brandDark: '#4f46e5',
+                        brandLight: '#e0e7ff',
+                        bgMain: '#f3f4f6',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #f3f4f6; }
+        .sidebar-link { transition: all 0.2s; border-radius: 8px; }
+        .sidebar-link:hover { background-color: #f3f4f6; color: #4f46e5; }
+        .sidebar-link.active { background-color: #e0e7ff; color: #4f46e5; font-weight: 600; }
+        .hidden-section { display: none; }
+        /* Soft Fade Animation */
+        .fade-in { animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        /* Card Hover Effect */
+        .hover-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+    </style>
+</head>
+<body class="h-screen flex overflow-hidden text-gray-800">
+
+    <aside class="w-64 bg-white border-r border-gray-200 flex flex-col z-20 hidden md:flex">
+        <div class="h-16 flex items-center px-6 border-b border-gray-100">
+            <div class="w-8 h-8 bg-brand rounded-lg flex items-center justify-center text-white font-bold mr-3 shadow-lg">S</div>
+            <span class="font-bold text-xl tracking-tight text-gray-900">SkillXchange</span>
+        </div>
+
+        <div class="flex-1 overflow-y-auto py-6 px-4 space-y-6">
+            
+            <div>
+                <p class="px-2 text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Explore</p>
+                <nav class="space-y-1">
+                    <div onclick="showTab('explore', this)" class="sidebar-link active flex items-center px-3 py-2 cursor-pointer text-sm text-gray-600">
+                        <i class="fas fa-compass w-6 text-center mr-2"></i> Explore Q&A
+                    </div>
+                    <div onclick="showTab('projects', this)" class="sidebar-link flex items-center px-3 py-2 cursor-pointer text-sm text-gray-600">
+                        <i class="fas fa-rocket w-6 text-center mr-2"></i> Project Talks
+                    </div>
+                    <div onclick="showTab('seniors', this)" class="sidebar-link flex items-center px-3 py-2 cursor-pointer text-sm text-gray-600">
+                        <i class="fas fa-user-graduate w-6 text-center mr-2"></i> Connect Seniors
+                    </div>
+                </nav>
+            </div>
+
+            <div>
+                <div class="flex items-center justify-between px-2 mb-2">
+                    <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Group Chats</p>
+                    <i class="fas fa-plus text-xs text-brand cursor-pointer"></i>
+                </div>
+                <nav class="space-y-1">
+                    <div onclick="showTab('chat', this)" class="sidebar-link flex items-center px-3 py-2 cursor-pointer text-sm text-gray-600">
+                        <span class="w-2 h-2 rounded-full bg-green-500 mr-3"></span> # general
+                    </div>
+                    <div onclick="showTab('chat', this)" class="sidebar-link flex items-center px-3 py-2 cursor-pointer text-sm text-gray-600">
+                        <span class="w-2 h-2 rounded-full bg-blue-500 mr-3"></span> # project-help
+                    </div>
+                </nav>
+            </div>
+        </div>
+
+        <div class="p-4 border-t border-gray-100">
+            <div class="flex items-center">
+                <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-brand to-purple-500 flex items-center justify-center text-white font-bold text-sm" id="user-avatar">U</div>
+                <div class="ml-3">
+                    <p class="text-sm font-semibold text-gray-700" id="user-name-display">Guest</p>
+                    <p class="text-xs text-green-500">● Online</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col h-screen overflow-hidden relative">
+        
+        <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 shadow-sm z-10">
+            <h2 class="text-lg font-bold text-gray-800" id="header-title">Explore Q&A</h2>
+            <div class="flex items-center space-x-4">
+                <div class="relative hidden sm:block">
+                    <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-sm"></i>
+                    <input type="text" placeholder="Search questions..." class="pl-10 pr-4 py-2 bg-gray-100 border-none rounded-full text-sm focus:ring-2 focus:ring-brand focus:bg-white transition w-64">
+                </div>
+                <button onclick="toggleModal('qa-modal')" class="bg-brand hover:bg-brandDark text-white px-5 py-2 rounded-full text-sm font-medium shadow-md transition transform hover:scale-105">
+                    <i class="fas fa-plus mr-1"></i> Ask Question
+                </button>
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-6 md:p-8" id="main-content">
+            
+            <div id="explore" class="content-section fade-in max-w-5xl mx-auto">
+                <div class="flex justify-between items-end mb-6">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">Community Questions</h1>
+                        <p class="text-gray-500 text-sm">Find answers, help others, and exchange skills.</p>
+                    </div>
+                </div>
+
+                <div id="qa-container" class="space-y-4">
+                    <p class="text-center text-gray-400 py-10">Connecting to Firebase...</p>
+                </div>
+            </div>
+
+            <div id="projects" class="content-section hidden-section fade-in max-w-5xl mx-auto">
+                <div class="bg-indigo-600 rounded-2xl p-8 mb-8 text-white shadow-xl relative overflow-hidden">
+                    <div class="relative z-10">
+                        <h2 class="text-3xl font-bold mb-2">Showcase Your Project</h2>
+                        <p class="text-indigo-100">Looking for teammates? Need feedback? Post it here.</p>
+                        <button class="mt-4 bg-white text-indigo-600 px-6 py-2 rounded-lg font-bold text-sm shadow hover:bg-gray-100">Post Project</button>
+                    </div>
+                    <div class="absolute -right-10 -bottom-20 w-64 h-64 bg-indigo-500 rounded-full opacity-50"></div>
+                </div>
+
+                <h3 class="font-bold text-gray-700 mb-4">Trending Projects</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white p-6 rounded-xl border border-gray-200 hover-card transition cursor-pointer">
+                        <div class="flex justify-between mb-4">
+                            <span class="bg-green-100 text-green-700 text-xs font-bold px-2 py-1 rounded">Open for Collab</span>
+                            <i class="far fa-bookmark text-gray-400"></i>
+                        </div>
+                        <h3 class="text-lg font-bold mb-2">AI Study Assistant App</h3>
+                        <p class="text-gray-500 text-sm mb-4">Building a Python app that summarizes lecture notes. Need a frontend dev (React) to help with the UI.</p>
+                        <div class="flex items-center justify-between border-t pt-4">
+                            <div class="flex -space-x-2">
+                                <div class="w-8 h-8 rounded-full bg-red-400 border-2 border-white"></div>
+                                <div class="w-8 h-8 rounded-full bg-blue-400 border-2 border-white"></div>
+                            </div>
+                            <span class="text-xs text-gray-400">2 spots left</span>
+                        </div>
+                    </div>
+                     <div class="bg-white p-6 rounded-xl border border-gray-200 hover-card transition cursor-pointer">
+                        <div class="flex justify-between mb-4">
+                            <span class="bg-purple-100 text-purple-700 text-xs font-bold px-2 py-1 rounded">Feedback Needed</span>
+                            <i class="far fa-bookmark text-gray-400"></i>
+                        </div>
+                        <h3 class="text-lg font-bold mb-2">Sustainable Energy Dashboard</h3>
+                        <p class="text-gray-500 text-sm mb-4">Created a dashboard for tracking home energy use. Looking for seniors to review my code.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="seniors" class="content-section hidden-section fade-in max-w-5xl mx-auto">
+                <h2 class="text-2xl font-bold mb-6">Find a Mentor</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover-card transition">
+                        <div class="h-24 bg-gradient-to-r from-blue-500 to-indigo-600"></div>
+                        <div class="px-6 relative">
+                            <div class="w-16 h-16 rounded-full bg-white p-1 absolute -top-8 border border-gray-200">
+                                <img src="https://ui-avatars.com/api/?name=John+Doe&background=0D8ABC&color=fff" class="rounded-full w-full h-full">
+                            </div>
+                        </div>
+                        <div class="pt-10 px-6 pb-6">
+                            <div class="flex justify-between items-center mb-1">
+                                <h3 class="font-bold text-lg">John Doe</h3>
+                                <span class="bg-yellow-100 text-yellow-800 text-xs font-bold px-2 py-0.5 rounded">Senior (Yr 4)</span>
+                            </div>
+                            <p class="text-sm text-gray-500 mb-4">Machine Learning Specialist. Can help with Python, TensorFlow, and Final Year Projects.</p>
+                            <button class="w-full bg-white border border-brand text-brand font-semibold py-2 rounded-lg hover:bg-brand hover:text-white transition">Request Mentorship</button>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover-card transition">
+                        <div class="h-24 bg-gradient-to-r from-pink-500 to-rose-500"></div>
+                        <div class="px-6 relative">
+                             <div class="w-16 h-16 rounded-full bg-white p-1 absolute -top-8 border border-gray-200">
+                                <img src="https://ui-avatars.com/api/?name=Sarah+Lee&background=db2777&color=fff" class="rounded-full w-full h-full">
+                            </div>
+                        </div>
+                        <div class="pt-10 px-6 pb-6">
+                             <div class="flex justify-between items-center mb-1">
+                                <h3 class="font-bold text-lg">Sarah Lee</h3>
+                                <span class="bg-yellow-100 text-yellow-800 text-xs font-bold px-2 py-0.5 rounded">Senior (Yr 3)</span>
+                            </div>
+                            <p class="text-sm text-gray-500 mb-4">Frontend Wizard. Expert in React, Tailwind, and UI/UX Design.</p>
+                            <button class="w-full bg-white border border-brand text-brand font-semibold py-2 rounded-lg hover:bg-brand hover:text-white transition">Request Mentorship</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="chat" class="content-section hidden-section fade-in h-full flex flex-col pb-4">
+                <div class="bg-white border border-gray-200 rounded-xl flex-1 flex flex-col overflow-hidden shadow-sm h-[calc(100vh-140px)]">
+                    <div class="h-14 border-b border-gray-100 flex items-center px-4 justify-between bg-gray-50">
+                        <div class="flex items-center text-gray-700">
+                            <i class="fas fa-hashtag text-gray-400 mr-2"></i>
+                            <span class="font-bold">general-chat</span>
+                        </div>
+                        <div class="flex -space-x-2">
+                            <div class="w-6 h-6 rounded-full bg-gray-300 border border-white"></div>
+                            <div class="w-6 h-6 rounded-full bg-gray-400 border border-white"></div>
+                            <div class="w-6 h-6 rounded-full bg-gray-500 border border-white text-[10px] text-white flex items-center justify-center">+5</div>
+                        </div>
+                    </div>
+                    
+                    <div id="chat-messages" class="flex-1 p-4 overflow-y-auto space-y-3 bg-white">
+                        </div>
+
+                    <div class="p-4 bg-gray-50 border-t border-gray-100 flex items-center">
+                        <button class="text-gray-400 hover:text-gray-600 mr-3"><i class="fas fa-plus-circle text-xl"></i></button>
+                        <input type="text" id="chat-input" placeholder="Message #general..." class="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-brand" onkeypress="if(event.key==='Enter') sendChat()">
+                        <button onclick="sendChat()" class="ml-2 text-brand hover:text-brandDark p-2"><i class="fas fa-paper-plane text-xl"></i></button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <div id="qa-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-lg transform transition-all scale-100">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-gray-800">Ask the Community</h3>
+                <button onclick="toggleModal('qa-modal')" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">What do you need help with?</label>
+                    <input id="qa-title" class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand focus:border-brand outline-none" placeholder="e.g. How do I center a div in CSS?">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                    <select id="qa-tag" class="w-full border border-gray-300 rounded-lg p-2.5 bg-white">
+                        <option value="Coding">Coding Help</option>
+                        <option value="Project">Project Idea</option>
+                        <option value="Math">Mathematics</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <button onclick="postQuestion()" class="w-full bg-brand text-white font-bold py-3 rounded-xl hover:bg-brandDark transition shadow-lg mt-2">Post Question</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. CONFIGURATION (PASTE KEYS HERE) ---
+        const firebaseConfig = {
+            // !!! PASTE YOUR FIREBASE KEYS HERE !!!
+            
+            
+        };
+
+        // --- 2. INITIALIZATION ---
+        if(firebaseConfig.apiKey) {
+            firebase.initializeApp(firebaseConfig);
+            const db = firebase.firestore();
+
+            // Setup User
+            let username = localStorage.getItem('sx_user');
+            if(!username) {
+                username = prompt("Enter your name to join:") || "Guest";
+                localStorage.setItem('sx_user', username);
+            }
+            document.getElementById('user-name-display').innerText = username;
+            document.getElementById('user-avatar').innerText = username.charAt(0).toUpperCase();
+
+            // --- 3. EXPLORE Q&A LOGIC ---
+            function postQuestion() {
+                const title = document.getElementById('qa-title').value;
+                const tag = document.getElementById('qa-tag').value;
+                if(title) {
+                    db.collection("questions").add({
+                        title: title,
+                        tag: tag,
+                        author: username,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    document.getElementById('qa-title').value = "";
+                    toggleModal('qa-modal');
+                }
+            }
+
+            // Realtime Listener for Questions
+            db.collection("questions").orderBy("timestamp", "desc").onSnapshot(snap => {
+                const container = document.getElementById("qa-container");
+                container.innerHTML = "";
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    const colors = { 'Coding': 'bg-blue-100 text-blue-700', 'Project': 'bg-purple-100 text-purple-700', 'Math': 'bg-red-100 text-red-700', 'Other': 'bg-gray-100 text-gray-700' };
+                    const tagClass = colors[data.tag] || colors['Other'];
+                    
+                    const card = `
+                        <div class="bg-white p-5 rounded-xl border border-gray-200 hover-card transition cursor-pointer flex justify-between items-center">
+                            <div>
+                                <div class="flex items-center space-x-2 mb-1">
+                                    <span class="${tagClass} text-xs font-bold px-2 py-0.5 rounded">${data.tag}</span>
+                                    <span class="text-xs text-gray-400">by ${data.author}</span>
+                                </div>
+                                <h3 class="text-lg font-semibold text-gray-800">${data.title}</h3>
+                            </div>
+                            <button class="text-brand hover:bg-brandLight p-2 rounded-full transition">
+                                <i class="far fa-comment-dots text-xl"></i>
+                            </button>
+                        </div>
+                    `;
+                    container.innerHTML += card;
+                });
+            });
+
+            // --- 4. CHAT LOGIC ---
+            function sendChat() {
+                const input = document.getElementById("chat-input");
+                if(input.value.trim()) {
+                    db.collection("messages").add({
+                        text: input.value,
+                        user: username,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    input.value = "";
+                }
+            }
+
+            db.collection("messages").orderBy("timestamp", "asc").onSnapshot(snap => {
+                const box = document.getElementById("chat-messages");
+                box.innerHTML = "";
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    const isMe = data.user === username;
+                    const html = `
+                        <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
+                            <div class="flex items-end gap-2 ${isMe ? 'flex-row-reverse' : 'flex-row'}">
+                                <div class="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center text-[10px] font-bold text-gray-600">${data.user.charAt(0)}</div>
+                                <div class="${isMe ? 'bg-brand text-white' : 'bg-gray-100 text-gray-800'} px-4 py-2 rounded-2xl max-w-xs text-sm shadow-sm">
+                                    ${data.text}
+                                </div>
+                            </div>
+                        </div>`;
+                    box.innerHTML += html;
+                });
+                box.scrollTop = box.scrollHeight;
+            });
+        }
+
+        // --- UI FUNCTIONS ---
+        function showTab(id, el) {
+            document.querySelectorAll('.content-section').forEach(d => d.classList.add('hidden-section'));
+            document.getElementById(id).classList.remove('hidden-section');
+            document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+            if(el) el.classList.add('active');
+            
+            const titles = {'explore': 'Explore Q&A', 'projects': 'Project Talks', 'seniors': 'Find Mentors', 'chat': 'Group Chat'};
+            document.getElementById('header-title').innerText = titles[id];
+        }
+
+        function toggleModal(id) {
+            const m = document.getElementById(id);
+            m.classList.toggle('hidden');
+            m.classList.toggle('flex');
+        }
+    </script>
+</body>
+</html>
