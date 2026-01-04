@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SkillXChange - Login</title>
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+
+  <style>
+    /* CSS STYLES */
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
+    body { margin: 0; background: #f6f8fa; height: 100vh; display: flex; justify-content: center; align-items: center; color: #24292f; }
+    .container { background: #ffffff; width: 380px; padding: 40px 30px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
+    .logo-wrapper { text-align: center; margin-bottom: 10px; }
+    .brand-logo { font-size: 32px; font-weight: 800; letter-spacing: -1.5px; margin: 0; background: linear-gradient(45deg, #0969da, #2da44e); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    h2 { text-align: center; margin-bottom: 25px; font-weight: 400; font-size: 18px; color: #57606a; }
+    label { font-size: 14px; font-weight: 500; margin-bottom: 8px; display: block; }
+    input { width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #d0d7de; margin-bottom: 20px; font-size: 14px; }
+    input:focus { outline: none; border-color: #0969da; box-shadow: 0 0 0 3px rgba(9,105,218,0.2); }
+    .btn-signin { width: 100%; padding: 12px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; background: #2da44e; color: white; font-size: 14px; margin-top: 5px; }
+    .btn-signin:hover { background: #2c974b; }
+    .footer-text { text-align: center; font-size: 14px; margin-top: 20px; }
+    .footer-text a { color: #0969da; text-decoration: none; }
+    #msg { text-align: center; margin-top: 15px; font-size: 14px; font-weight: 500; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="logo-wrapper">
+        <h1 class="brand-logo">SKILLXCHANGE</h1>
+    </div>
+
+    <h2>Sign in to your account</h2>
+
+    <form id="loginForm">
+      <label for="email">Email address</label>
+      <input type="email" id="email" placeholder="name@example.com" required>
+
+      <div style="display: flex; justify-content: space-between;">
+        <label for="password">Password</label>
+      </div>
+      <input type="password" id="password" placeholder="Password" required>
+
+      <button type="submit" class="btn-signin">Sign in</button>
+    </form>
+
+    <p class="footer-text">
+      New to SkillXChange? <a href="signup.html">Create an account</a>
+    </p>
+
+    <p id="msg"></p>
+  </div>
+
+  <script>
+    // --- 1. FIREBASE CONFIG ---
+    // PASTE YOUR KEYS HERE
+    const firebaseConfig = {
+        apiKey: "AIzaSyCLafxMmbSanvmgP9KPvWXO7968BgkSMAQ",
+            authDomain: "skillxchange-93fac.firebaseapp.com",
+            projectId: "skillxchange-93fac",
+            storageBucket: "skillxchange-93fac.firebasestorage.app",
+            messagingSenderId: "363649168062",
+            appId: "1:363649168062:web:a938e95d8c7a684a1de4ef"
+    };
+    
+    // Initialize
+    if(firebaseConfig.apiKey !== "PASTE_YOUR_API_KEY_HERE") {
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+
+        document.getElementById("loginForm").addEventListener("submit", function (e) {
+            e.preventDefault();
+            const email = document.getElementById("email").value;
+            const pass = document.getElementById("password").value;
+            const msg = document.getElementById("msg");
+
+            msg.textContent = "Signing in...";
+            msg.style.color = "gray";
+
+            auth.signInWithEmailAndPassword(email, pass)
+            .then((userCredential) => {
+                msg.style.color = "#2da44e";
+                msg.textContent = "Login successful! Redirecting...";
+                setTimeout(() => {
+                    window.location.href = "index.html"; 
+                }, 1000);
+            })
+            .catch((error) => {
+                msg.style.color = "#cf222e";
+                msg.textContent = "Error: " + error.message;
+            });
+        });
+    } else {
+        alert("Please paste your Firebase Keys in the code!");
+    }
+  </script>
+
+</body>
+</html>

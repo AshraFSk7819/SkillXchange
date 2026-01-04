@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SkillXChange - Create Account</title>
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+  <style>
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
+    body { margin: 0; background: #f6f8fa; height: 100vh; display: flex; justify-content: center; align-items: center; color: #24292f; }
+    .container { background: #ffffff; width: 420px; padding: 40px 30px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
+    .brand-logo { text-align: center; font-size: 32px; font-weight: 800; letter-spacing: -1.5px; margin: 0 0 10px 0; background: linear-gradient(45deg, #0969da, #2da44e); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    h2 { text-align: center; margin-bottom: 25px; font-weight: 400; font-size: 18px; color: #57606a; }
+    .form-group { margin-bottom: 15px; }
+    label { font-size: 14px; font-weight: 500; margin-bottom: 6px; display: block; }
+    input { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #d0d7de; font-size: 14px; }
+    input:focus { outline: none; border-color: #0969da; box-shadow: 0 0 0 3px rgba(9,105,218,0.2); }
+    .btn-signup { width: 100%; padding: 12px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; background: #0969da; color: white; font-size: 14px; margin-top: 10px; }
+    .btn-signup:hover { background: #0861c5; }
+    .footer-text { text-align: center; font-size: 14px; margin-top: 20px; }
+    .footer-text a { color: #0969da; text-decoration: none; }
+    .row { display: flex; gap: 10px; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1 class="brand-logo">SKILLXCHANGE</h1>
+    <h2>Join the community</h2>
+
+    <form id="signupForm">
+      <div class="row">
+        <div class="form-group">
+          <label>First Name</label>
+          <input type="text" id="firstName" placeholder="Jane" required>
+        </div>
+        <div class="form-group">
+          <label>Last Name</label>
+          <input type="text" id="lastName" placeholder="Doe" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Email address</label>
+        <input type="email" id="email" placeholder="name@example.com" required>
+      </div>
+
+      <div class="form-group">
+        <label>Pick a Username</label>
+        <input type="text" id="username" placeholder="jdoe24" required>
+      </div>
+
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="password" placeholder="Create a password" required>
+      </div>
+       
+      <div class="form-group">
+        <label>Github Username (e.g. google)</label>
+        <input type="text" id="githubLink" placeholder="google" required>
+      </div>
+
+      <button type="submit" class="btn-signup">Create account</button>
+    </form>
+
+    <p class="footer-text">
+      Already have an account? <a href="login.html">Sign in</a>
+    </p>
+  </div>
+
+  <script>
+    // --- 1. FIREBASE CONFIG ---
+    // PASTE YOUR KEYS HERE
+    const firebaseConfig = {
+        apiKey: "AIzaSyCLafxMmbSanvmgP9KPvWXO7968BgkSMAQ",
+            authDomain: "skillxchange-93fac.firebaseapp.com",
+            projectId: "skillxchange-93fac",
+            storageBucket: "skillxchange-93fac.firebasestorage.app",
+            messagingSenderId: "363649168062",
+            appId: "1:363649168062:web:a938e95d8c7a684a1de4ef"
+    };
+
+    if(firebaseConfig.apiKey !== "PASTE_YOUR_API_KEY_HERE") {
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        document.getElementById("signupForm").addEventListener("submit", function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const firstName = document.getElementById('firstName').value;
+            const lastName = document.getElementById('lastName').value;
+            const username = document.getElementById('username').value;
+            const githubLink = document.getElementById('githubLink').value;
+
+            auth.createUserWithEmailAndPassword(email, password)
+            .then((userCredential) => {
+                const user = userCredential.user;
+                
+                // Save user details to Database
+                return db.collection("users").doc(user.uid).set({
+                    firstName: firstName,
+                    lastName: lastName,
+                    username: username,
+                    email: email,
+                    githubLink: githubLink, // This will be used in the main page
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            })
+            .then(() => {
+                alert("Account created successfully! Logging you in...");
+                window.location.href = "index.html"; 
+            })
+            .catch((error) => {
+                alert("Error: " + error.message);
+            });
+        });
+    } else {
+        alert("Please paste your Firebase Keys in the code!");
+    }
+  </script>
+
+</body>
+</html>
