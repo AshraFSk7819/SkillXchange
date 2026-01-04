@@ -79,6 +79,12 @@
   <i class="fas fa-pencil-alt w-6 text-center mr-2"></i>
   My Posts
 </div>
+<div onclick="openMyProjects(this)"
+     class="sidebar-link flex items-center px-3 py-2.5 cursor-pointer text-sm text-gray-600">
+  <i class="fas fa-folder-open w-6 text-center mr-2"></i>
+  My Projects
+</div>
+
 
             </nav>
         </div>
@@ -210,24 +216,43 @@
                 </div>
             </div>
 
-            <div id="projects" class="page-section overflow-y-auto h-full p-6 md:p-8">
-                <div class="max-w-6xl mx-auto">
-                    <div class="flex justify-between items-end mb-8">
-                        <div>
-                            <h1 class="text-2xl font-bold text-gray-900">Student Projects</h1>
-                            <p class="text-gray-500">Collaborate on ongoing projects or showcase yours.</p>
-                        </div>
-                         <button onclick="toggleModal('project-modal')"
-          class="bg-brand text-white px-4 py-2 rounded-xl font-semibold hover:bg-brandDark transition">
-    + Launch Project
-  </button>
-                    </div>
-                        <div id="projects-container"
-                            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        </div>
+           <!-- PROJECTS PAGE -->
+<div id="projects" class="page-section overflow-y-auto h-full p-6 md:p-8">
+  <div class="max-w-6xl mx-auto">
+    <div class="flex justify-between items-end mb-8">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900">Student Projects</h1>
+        <p class="text-gray-500">Collaborate on ongoing projects or showcase yours.</p>
+      </div>
+      <button onclick="toggleModal('project-modal')"
+              class="bg-brand text-white px-4 py-2 rounded-xl font-semibold hover:bg-brandDark transition">
+        + Launch Project
+      </button>
+    </div>
 
-                </div>
-            </div>
+    <div id="projects-container"
+         class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    </div>
+  </div>
+</div>
+
+<!-- MY PROJECTS PAGE -->
+<div id="my-projects" class="page-section overflow-y-auto h-full p-6 md:p-8">
+  <div class="max-w-6xl mx-auto">
+    <div class="mb-8">
+      <h1 class="text-2xl font-bold text-gray-900">My Projects</h1>
+      <p class="text-gray-500">Projects you have published.</p>
+    </div>
+
+    <div id="my-projects-container"
+         class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <p class="text-gray-400 col-span-full text-center">
+        Loading your projects...
+      </p>
+    </div>
+  </div>
+</div>
+
 
             <div id="seniors" class="page-section overflow-y-auto h-full p-6 md:p-8">
                 <div class="max-w-6xl mx-auto">
@@ -427,6 +452,11 @@ auth.onAuthStateChanged(async (user) => {
     updateUserUI(fullName);
     loadGitHubRepos(data.githubLink);
 
+    const myProjectsPage = document.getElementById("my-projects");
+  if (myProjectsPage && myProjectsPage.classList.contains("active-page")) {
+    loadMyProjects();
+  }
+
     // Show sidebar logout
     logoutBtn.classList.remove("hidden");
 
@@ -551,6 +581,7 @@ const heartIcon = hasLiked
                     if(data.tag === "Offering Skill") tagColor = "bg-green-50 text-green-600";
 
                     container.innerHTML += `
+                    
                         <div class="bg-white p-6 rounded-xl border border-gray-200 hover-card transition shadow-sm">
                             <div class="flex justify-between items-start mb-3">
                                 <div class="flex items-center space-x-3">
@@ -623,7 +654,7 @@ function loadProjects() {
               <h3 class="font-bold text-lg mb-2">${p.title}</h3>
               <p class="text-sm text-gray-500 mb-3">${p.description}</p>
               <p class="text-xs text-gray-400 mb-4">
-                Tech: ${p.tech || "Not specified"}
+                Tech: ${p.techStack || p.tech || "Not specified"}
               </p>
               <p class="text-xs font-semibold text-gray-600">
                 By ${p.author}
@@ -634,6 +665,96 @@ function loadProjects() {
       });
     });
 }
+function openMyProjects(btn) {
+  const user = localStorage.getItem("sx_user");
+
+  if (!user || user === "Guest") {
+    alert("Please log in to view your projects.");
+    return;
+  }
+
+  switchPage("my-projects", btn);
+  loadMyProjects();
+}
+function loadMyProjects() {
+  const container = document.getElementById("my-projects-container");
+  const user = localStorage.getItem("sx_user");
+
+  if (!container || !user) return;
+
+  container.innerHTML = "";
+
+  db.collection("projects")
+    .where("author", "==", user)
+    .get()
+    .then(snapshot => {
+      if (snapshot.empty) {
+        container.innerHTML = `
+          <p class="text-gray-400 col-span-full text-center">
+            You haven’t published any projects yet.
+          </p>`;
+        return;
+      }
+
+      snapshot.forEach(doc => {
+        const p = { id: doc.id, ...doc.data() };
+
+        container.innerHTML += `
+  <div class="bg-white rounded-xl border border-gray-200 overflow-hidden hover-card transition">
+    <div class="h-32 bg-gradient-to-r from-indigo-500 to-purple-500"></div>
+    <div class="p-6">
+      <h3 class="font-bold text-lg mb-2">${p.title}</h3>
+      <p class="text-sm text-gray-500 mb-3">${p.description}</p>
+      <p class="text-xs text-gray-400 mb-4">
+        Tech: ${p.techStack || p.tech || "Not specified"}
+      </p>
+
+      <div class="flex gap-3">
+        <button
+          onclick="editProject('${p.id}', '${p.title}', '${p.description}', '${p.techStack || p.tech || ""}')"
+          class="text-xs px-3 py-1.5 rounded-lg bg-blue-100 text-blue-700 font-semibold hover:bg-blue-200">
+          Edit
+        </button>
+
+        <button
+          onclick="deleteProject('${p.id}')"
+          class="text-xs px-3 py-1.5 rounded-lg bg-red-100 text-red-600 font-semibold hover:bg-red-200">
+          Delete
+        </button>
+      </div>
+    </div>
+  </div>
+`;
+
+      });
+    });
+}
+function deleteProject(projectId) {
+  const confirmDelete = confirm("Are you sure you want to delete this project?");
+  if (!confirmDelete) return;
+
+  db.collection("projects").doc(projectId).delete()
+    .then(() => {
+      loadMyProjects();
+    })
+    .catch(err => {
+      alert("Failed to delete project");
+      console.error(err);
+    });
+}
+let editingProjectId = null;
+
+function editProject(id, title, desc, tech) {
+  editingProjectId = id;
+
+  document.getElementById("proj-title").value = title;
+  document.getElementById("proj-desc").value = desc;
+  document.getElementById("proj-tags").value = tech;
+
+  toggleModal("project-modal");
+}
+
+
 
         // 3. PAGE SWITCHER
         function switchPage(pageId, btnElement) {
@@ -645,6 +766,7 @@ function loadProjects() {
             const titles = {
                 'explore': 'Explore Feed',
                 'projects': 'Projects', 
+                'my-projects': 'My Projects',
                 'seniors': 'Senior Mentors',
                 'chat': 'Messages'
             };
@@ -788,20 +910,36 @@ function postProject() {
     return;
   }
 
-  db.collection("projects").add({
+  const data = {
     title,
     description: desc,
-    tech,
+    techStack: tech,
     author,
     timestamp: firebase.firestore.FieldValue.serverTimestamp()
-  });
+  };
 
-  toggleModal("project-modal");
+  // 🔁 EDIT MODE
+  if (editingProjectId) {
+    db.collection("projects").doc(editingProjectId).update(data)
+      .then(() => {
+        editingProjectId = null;
+        toggleModal("project-modal");
+        loadMyProjects();
+      });
+    return;
+  }
+
+  // ➕ CREATE MODE
+  db.collection("projects").add(data).then(() => {
+    toggleModal("project-modal");
+    loadMyProjects();
+  });
 
   document.getElementById("proj-title").value = "";
   document.getElementById("proj-desc").value = "";
   document.getElementById("proj-tags").value = "";
 }
+
 
 
 
@@ -910,3 +1048,4 @@ function postProject() {
 
 </body>
 </html>
+
