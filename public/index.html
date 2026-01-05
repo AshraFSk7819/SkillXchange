@@ -725,11 +725,20 @@ function loadProjects() {
           By ${p.author}
         </span>
 
-        <button
-          onclick="messageProjectAuthor('${p.author}')"
-          class="text-xs px-3 py-1.5 rounded-lg bg-brandLight text-brand font-semibold hover:bg-brand hover:text-white transition">
-          Message
-        </button>
+        <div class="flex gap-2">
+  <button
+    onclick="viewProjectDetails('${doc.id}')"
+    class="text-xs px-3 py-1.5 rounded-lg bg-gray-100 text-gray-600 font-semibold hover:bg-gray-200 transition">
+    More Details
+  </button>
+
+  <button
+    onclick="messageProjectAuthor('${p.author}')"
+    class="text-xs px-3 py-1.5 rounded-lg bg-brandLight text-brand font-semibold hover:bg-brand hover:text-white transition">
+    Message
+  </button>
+</div>
+
       </div>
     </div>
   </div>
@@ -972,6 +981,47 @@ function loadSavedDMs() {
                 document.getElementById(`room-${currentRoomId}`).classList.add('active');
             }
         });
+}
+function viewProjectDetails(projectId) {
+  const modal = document.getElementById("project-details-modal");
+
+  const titleEl = document.getElementById("detail-title");
+  const descEl = document.getElementById("detail-desc");
+  const authorEl = document.getElementById("detail-author");
+  const techEl = document.getElementById("detail-tech");
+  const dateEl = document.getElementById("detail-date");
+  const msgBtn = document.getElementById("detail-message-btn");
+
+  toggleModal("project-details-modal");
+
+  db.collection("projects").doc(projectId).get().then(doc => {
+    if (!doc.exists) {
+      titleEl.innerText = "Project not found";
+      return;
+    }
+
+    const data = doc.data();
+
+    titleEl.innerText = data.title;
+    descEl.innerText = data.description;
+    authorEl.innerText = data.author;
+
+    dateEl.innerText = data.timestamp
+      ? data.timestamp.toDate().toLocaleDateString()
+      : "Recently";
+
+    const techStack = (data.techStack || "").split(",");
+    techEl.innerHTML = techStack.map(t =>
+      `<span class="px-2.5 py-1 bg-indigo-50 text-indigo-700 text-xs rounded-lg border">
+        ${t.trim()}
+      </span>`
+    ).join("");
+
+    msgBtn.onclick = () => {
+      toggleModal("project-details-modal");
+      messageProjectAuthor(data.author);
+    };
+  });
 }
 
         // 3. PAGE SWITCHER
@@ -1503,6 +1553,43 @@ function renderGitHubRepos(repos) {
             </button>
         </div>
     </div>
+</div>
+<!-- PROJECT DETAILS MODAL -->
+<div id="project-details-modal"
+     class="fixed inset-0 bg-slate-900/50 hidden items-center justify-center z-50 backdrop-blur-sm p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[85vh]">
+
+    <div class="bg-gray-50 px-6 py-4 border-b flex justify-between items-center">
+      <h3 class="text-xl font-bold text-gray-800">Project Details</h3>
+      <button onclick="toggleModal('project-details-modal')" class="text-gray-400 hover:text-gray-600">
+        <i class="fas fa-times text-xl"></i>
+      </button>
+    </div>
+
+    <div class="p-6 overflow-y-auto">
+      <h2 id="detail-title" class="text-2xl font-bold text-gray-900 mb-2"></h2>
+
+      <div class="flex items-center gap-4 text-sm text-gray-500 mb-4">
+        <span><i class="fas fa-user"></i> <span id="detail-author"></span></span>
+        <span><i class="far fa-clock"></i> <span id="detail-date"></span></span>
+      </div>
+
+      <div class="mb-6">
+        <h4 class="text-xs font-bold text-gray-400 uppercase mb-2">Description</h4>
+        <p id="detail-desc" class="text-gray-700 text-sm whitespace-pre-wrap"></p>
+      </div>
+
+      <div class="mb-6">
+        <h4 class="text-xs font-bold text-gray-400 uppercase mb-2">Tech Stack</h4>
+        <div id="detail-tech" class="flex flex-wrap gap-2"></div>
+      </div>
+
+      <button id="detail-message-btn"
+              class="w-full bg-brand text-white font-bold py-2.5 rounded-xl hover:bg-brandDark transition">
+        <i class="far fa-comment-alt"></i> Message Author
+      </button>
+    </div>
+  </div>
 </div>
 
 </body>
