@@ -361,11 +361,16 @@
         }
         
         // Apply theme on load
-        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
+        // Apply theme on load (LIGHT MODE DEFAULT)
+const savedTheme = localStorage.getItem('theme');
+
+if (savedTheme === 'dark') {
+  document.documentElement.classList.add('dark');
+} else {
+  document.documentElement.classList.remove('dark');
+  localStorage.setItem('theme', 'light');
+}
+
 
         // --- EXISTING LOGIC BELOW ---
         function logout() {
