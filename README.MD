@@ -85,7 +85,8 @@ The Code Visualizer lets you watch algorithms execute step-by-step with beautifu
 - Built specifically for college students  
 - Solves a real and common problem  
 - Simple, practical, and demo-ready  
-- Designed to scale across departments and colleges  
+- Designed to scale across departments and colleges 
+- To connect with the seniors and can publish your projects 
 
 ---
 
